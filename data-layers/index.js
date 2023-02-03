@@ -20,6 +20,8 @@ const geocodings = require('./adapters/geocoding');
 app.use('/v1/geocoding/', geocodings);
 const air_pollution = require('./adapters/air_pollution');
 app.use('/v1/air_pollution/', air_pollution);
+const weather = require('./adapters/weather');
+app.use('/v1/weather/', weather);
 
 
 const httpServer = http.createServer(app);
