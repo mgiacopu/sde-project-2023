@@ -1,7 +1,13 @@
 const fs = require('fs');
 const http = require('http');
 const express = require('express');
+const axios = require('axios');
 
+/**
+ * Default configuration for axios web requests
+ */
+axios.defaults.method = 'get';
+axios.defaults.headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:107.0) Gecko/20100101 Firefox/109.0'};
 
 const app = express();
 app.use(express.json());

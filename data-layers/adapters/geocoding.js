@@ -4,8 +4,6 @@ const axios = require('axios');
 
 const NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org";
 const CONFIG = {
-    method: 'get',
-    headers: {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:107.0) Gecko/20100101 Firefox/109.0'},
     url: undefined,
     params: {
         format: 'jsonv2',
