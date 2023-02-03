@@ -20,10 +20,11 @@ from telegram.ext import (
     CallbackContext,
 )
 
+# Load environment variables
 load_dotenv()
-
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
+# Helper functions
 def CQH(callback: Callable, pattern: str) -> CallbackQueryHandler:
     """Shorthand function for CallbackQueryHandler
 
@@ -36,9 +37,10 @@ def CQH(callback: Callable, pattern: str) -> CallbackQueryHandler:
     """
     return CallbackQueryHandler(callback, pattern="^" + pattern + "$")
 
+# States and constants
 (
     START,
-    SELECT_LOCATION,
+    SELECT_INPUT,
     WEATHER,
     FAV_LOCATION,
     SEARCH_LOCATION,
@@ -56,7 +58,7 @@ class TelegramBot:
         main_handler = ConversationHandler(
             entry_points=[CommandHandler("start", self.start)],
             states={
-                SELECT_LOCATION: [
+                SELECT_INPUT: [
                     CQH(self.retrieve_fav_location, FAV_LOCATION),
                     CQH(self.ask_for_location, SEARCH_LOCATION),
                 ],
@@ -110,7 +112,7 @@ class TelegramBot:
         )
         update.message.reply_text(text=text, reply_markup=keyboard)
 
-        return SELECT_LOCATION
+        return SELECT_INPUT
 
     def ask_for_location(self, update: Update, context: CallbackContext) -> int:
         
@@ -125,10 +127,19 @@ class TelegramBot:
         pass
 
     def verify_location(self, update: Update, context: CallbackContext) -> int:
-        update.message.reply_text("OK")
+        update.message.reply_text("I'm searching for the weather in your location...")
         return WEATHER
     
     def wrong_location(self, update: Update, context: CallbackContext) -> int:
+        """Handles wrong location input from the user.
+
+        Args:
+            update (Update): telegram update object
+            context (CallbackContext): telegram context object
+
+        Returns:
+            int: New state of the conversation
+        """
         update.message.reply_text("I don't understand what you mean. Please try sending the location again.")
         return SEARCH_LOCATION
     
