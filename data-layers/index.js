@@ -13,17 +13,19 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const { parseLonLat } = require('./middleware');
+
 /**
  * ROUTES
  */
 const geocodings = require('./adapters/geocoding');
 app.use('/v1/geocoding/', geocodings);
 const air_pollution = require('./adapters/air_pollution');
-app.use('/v1/air_pollution/', air_pollution);
+app.use('/v1/air_pollution/', parseLonLat, air_pollution);
 const weather = require('./adapters/weather');
-app.use('/v1/weather/', weather);
+app.use('/v1/weather/', parseLonLat, weather);
 const map = require('./adapters/map');
-app.use('/v1/map/', map);
+app.use('/v1/map/', parseLonLat, map);
 
 const httpServer = http.createServer(app);
 httpServer.listen(80, () => {

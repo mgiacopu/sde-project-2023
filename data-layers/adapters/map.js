@@ -15,14 +15,9 @@ function lat2tile(lat, zoom) { return (Math.floor((1 - Math.log(Math.tan(lat * M
  * @see https://apidocs.geoapify.com/docs/maps/map-tiles/#about
  */
 router.get('/', function (req, res) {
-    if (!req.query.lat || !req.query.lon) {
-        res.status(400).json({ error: 'lat and lon are required parameters' });
-        return;
-    }
-
     const zoom = parseInt(req.query.zoom) || ZOOM;
-    const lon = parseFloat(req.query.lon);
-    const lat = parseFloat(req.query.lat);
+    const lon = req.lon;
+    const lat = req.lat;
     const x = lon2tile(lon, zoom);
     const y = lat2tile(lat, zoom);
 
@@ -62,14 +57,9 @@ router.get('/', function (req, res) {
  * @see https://www.netzwolf.info/geo/math/tilebrowser.html?tx=${x}&ty=${y}&tz=15#tile
  */
 router.get('/precipitations', function (req, res) {
-    if (!req.query.lat || !req.query.lon) {
-        res.status(400).json({ error: 'lat and lon are required parameters' });
-        return;
-    }
-
     const zoom = parseInt(req.query.zoom) || ZOOM;
-    const lon = parseFloat(req.query.lon);
-    const lat = parseFloat(req.query.lat);
+    const lon = req.lon;
+    const lat = req.lat;
     const x = lon2tile(lon, zoom);
     const y = lat2tile(lat, zoom);
 

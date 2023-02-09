@@ -15,13 +15,8 @@ const CONFIG = {
  * @see https://www.weatherapi.com/docs/
  */
 router.get('/current', function (req, res) { 
-    if (!req.query.lat || !req.query.lon) { 
-        res.status(400).json({error: 'lat and lon are required parameters'});
-        return;
-    }
-
-    const lat = req.query.lat;
-    const lon = req.query.lon;
+    const lat = req.lat;
+    const lon = req.lon;
 
     let config = {
         ...CONFIG,

@@ -43,13 +43,16 @@ router.get('/search', function (req, res) {
 
 
 router.get('/reverse', function (req, res) {
-    if (!req.query.lat || !req.query.lon) { 
+    if (!req.query.lat || !req.query.lon) {
         res.status(400).json({error: 'lat and lon are required parameters'});
         return;
     }
-
-    const lat = req.query.lat;
-    const lon = req.query.lon;
+    const lat = parseFloat(req.query.lat);
+    const lon = parseFloat(req.query.lon);
+    if (isNaN(lat) || isNaN(lon)) {
+        res.status(400).json({error: 'lat and lon must be numbers'});
+        return;
+    }
 
     let config = {
         ...CONFIG,
