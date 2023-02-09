@@ -22,7 +22,8 @@ const air_pollution = require('./adapters/air_pollution');
 app.use('/v1/air_pollution/', air_pollution);
 const weather = require('./adapters/weather');
 app.use('/v1/weather/', weather);
-
+const map = require('./adapters/map');
+app.use('/v1/map/', map);
 
 const httpServer = http.createServer(app);
 httpServer.listen(80, () => {
