@@ -26,6 +26,8 @@ const weather = require('./adapters/weather');
 app.use('/v1/weather/', parseLonLat, weather);
 const map = require('./adapters/map');
 app.use('/v1/map/', parseLonLat, map);
+const places = require('./adapters/places');
+app.use('/v1/places/', parseLonLat, places);
 
 const httpServer = http.createServer(app);
 httpServer.listen(80, () => {
