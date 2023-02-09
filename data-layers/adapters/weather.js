@@ -3,7 +3,7 @@ const router = express.Router()
 const axios = require('axios');
 const { WEATHERAPI_KEY } = require('../secrets');
 
-const WEATHERAPI_BASE_URL = "https://api.weatherapi.com/v1/current.json";
+const WEATHERAPI_BASE_URL = "https://api.weatherapi.com/v1/forecast.json";
 const CONFIG = {
     url: WEATHERAPI_BASE_URL,
     params: {
@@ -28,6 +28,9 @@ router.get('/current', function (req, res) {
         params: {
             ...CONFIG.params,
             q: `${lat},${lon}`,
+            alerts: "yes",
+            days: 1,
+            aqi: "yes",
         }
     };
     axios(config)
