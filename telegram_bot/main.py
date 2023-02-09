@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from typing import List, Tuple, Dict, Any, Callable
+from time import sleep
 
 from telegram import (
     Bot,
@@ -44,7 +45,14 @@ def CQH(callback: Callable, pattern: str) -> CallbackQueryHandler:
     WEATHER,
     FAV_LOCATION,
     SEARCH_LOCATION,
-) = map(chr, range(5))
+    PREVIOUS,
+    NEXT,
+    PLACES_RESTAURANTS,
+    PLACES_PARKS,
+    PLACES_SIGHTS,
+    PLACES_MUSEUMS,
+    PLACES,
+) = map(chr, range(12))
 
 class TelegramBot:
 
@@ -67,10 +75,15 @@ class TelegramBot:
                     MessageHandler(~(Filters.text | Filters.location), self.wrong_location),
                 ],
                 WEATHER: [
-                    MessageHandler((Filters.text | Filters.location), self.cancel),
+                    CQH(self.places, PLACES_RESTAURANTS),
+                    CQH(self.places, PLACES_PARKS),
+                    CQH(self.places, PLACES_MUSEUMS),
+                    CQH(self.places, PLACES_SIGHTS),
+                ],
+                PLACES: [
                 ],
             },
-            fallbacks=[CommandHandler("cancel", self.cancel)],
+            fallbacks=[CommandHandler("end", self.cancel)],
         )
 
         dispatcher.add_handler(main_handler)
@@ -127,8 +140,83 @@ class TelegramBot:
         pass
 
     def verify_location(self, update: Update, context: CallbackContext) -> int:
+
+        # Get user input
+        if update.message.location:
+            location = update.message.location
+        else:
+            location = dict(location=update.message.text)
+        
         update.message.reply_text("I'm searching for the weather in your location...")
+
+        buttons = [
+            [
+                InlineKeyboardButton(
+                    text="\U000025C0",
+                    callback_data=PREVIOUS,
+                ),
+                InlineKeyboardButton(
+                    text="\U000025B6",
+                    callback_data=NEXT,
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="\U0001F374 Restaurants",
+                    callback_data=PLACES_RESTAURANTS,
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="\U0001F333 Parks",
+                    callback_data=PLACES_PARKS,
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="\U00002728 Sights",
+                    callback_data=PLACES_SIGHTS,
+                ),                
+
+            ],
+            [                
+                InlineKeyboardButton(
+                    text="\U0001F5FF Museums",
+                    callback_data=PLACES_MUSEUMS,
+                ),
+            ],
+        ]
+
+        keyboard = InlineKeyboardMarkup(buttons)
+
+        update.message.reply_photo(
+            photo="https://openweathermap.org/themes/openweathermap/assets/vendor/owm/img/precipitation_new.jpg",
+            caption="Here is the weather in your location.",
+            reply_markup=keyboard,
+        )
+
         return WEATHER
+
+    def places(self, update: Update, context: CallbackContext) -> int:
+
+        # define buttons with places to visit
+        buttons = [
+            [
+                InlineKeyboardButton(
+                    text="Place 1",
+                    url="maps.google.com/maps?q=45.516002+10.912136292242664",
+                ),
+            ],
+        ]
+
+        keyboard = InlineKeyboardMarkup(buttons)
+
+        update.callback_query.message.reply_text(
+            text="Cool places",
+            reply_markup=keyboard,
+        )
+
+        return PLACES
     
     def wrong_location(self, update: Update, context: CallbackContext) -> int:
         """Handles wrong location input from the user.
