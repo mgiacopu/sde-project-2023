@@ -29,6 +29,9 @@ app.use('/v1/map/', parseLonLat, map);
 const places = require('./adapters/places');
 app.use('/v1/places/', parseLonLat, places);
 
+const db_user = require('./db/user');
+app.use('/v1/db/user', db_user);
+
 const httpServer = http.createServer(app);
 httpServer.listen(80, () => {
     console.log('HTTP Server running on port 80');

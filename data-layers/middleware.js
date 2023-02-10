@@ -16,6 +16,23 @@ function parseLonLat(req, res, next) {
     next();
 }
 
+function parseTgUserId(req, res, next) {
+    if (!req.params.tgUserId) {
+        res.status(400).json({error: 'id is a required parameter'});
+        return;
+    }
+
+    req.tgUserId = parseInt(req.params.tgUserId);
+
+    if (isNaN(req.tgUserId)) {
+        res.status(400).json({error: 'id must be a number'});
+        return;
+    }
+
+    next();
+}
+
 module.exports = {
     parseLonLat,
+    parseTgUserId,
 }
