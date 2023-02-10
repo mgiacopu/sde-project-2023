@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const axios = require('axios');
+const { parseLonLat } = require('../middleware');
 
 const NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org";
 const CONFIG = {
@@ -42,25 +43,14 @@ router.get('/search', function (req, res) {
 );
 
 
-router.get('/reverse', function (req, res) {
-    if (!req.query.lat || !req.query.lon) {
-        res.status(400).json({error: 'lat and lon are required parameters'});
-        return;
-    }
-    const lat = parseFloat(req.query.lat);
-    const lon = parseFloat(req.query.lon);
-    if (isNaN(lat) || isNaN(lon)) {
-        res.status(400).json({error: 'lat and lon must be numbers'});
-        return;
-    }
-
+router.get('/reverse', parseLonLat, function (req, res) {
     let config = {
         ...CONFIG,
         url: `${NOMINATIM_BASE_URL}/reverse`,
         params: {
             ...CONFIG.params,
-            lat: lat,
-            lon: lon,
+            lat: req.lat,
+            lon: req.lon,
         }
     };
     axios(config)
