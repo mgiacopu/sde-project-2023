@@ -1,0 +1,10 @@
+version: "3.7"
+
+services:
+  process-centric-layer:
+    build:
+      context: ./telegram_bot
+    volumes:
+      - ./telegram_bot:/app
+    command: main.py
+
