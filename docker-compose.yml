@@ -1,0 +1,9 @@
+version: "3.7"
+
+services:
+  data-layers:
+    build:
+      context: ./data-layers
+    ports:
+      - "8083:80"
+    command: run start
