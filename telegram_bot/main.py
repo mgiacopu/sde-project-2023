@@ -2,6 +2,9 @@ import os
 from dotenv import load_dotenv
 from typing import List, Tuple, Dict, Any, Callable
 from time import sleep
+import requests as r
+from PIL import Image
+from io import BytesIO
 
 from telegram import (
     Bot,
@@ -20,6 +23,8 @@ from telegram.ext import (
     CallbackQueryHandler,
     CallbackContext,
 )
+
+BUSINESS_LAYER_URL = "business-layer"
 
 # Load environment variables
 load_dotenv()
@@ -140,14 +145,33 @@ class TelegramBot:
         pass
 
     def verify_location(self, update: Update, context: CallbackContext) -> int:
+        
+        search_message = update.message.reply_text("I'm searching for the weather in the provided location...")
 
         # Get user input
         if update.message.location:
             location = update.message.location
+            location = dict(lat=location.latitude, lon=location.longitude)
         else:
             location = dict(location=update.message.text)
+
+        # Get weather data
+        res_weather = r.get(f"http://{BUSINESS_LAYER_URL}/weather", params=location)
+
+        # Get map image
+        res_map = r.get(f"http://{BUSINESS_LAYER_URL}/map", params=location)
+
+        if res_weather.status_code != 200 or res_map.status_code != 200:
+            search_message.edit_text("I couldn't find the weather in the provided location location. Try again.")
+            return SEARCH_LOCATION
         
-        update.message.reply_text("I'm searching for the weather in your location...")
+        context.user_data["location"] = location
+        
+        map_image = BytesIO(res_map.content)
+        weather_condition = res_weather.json()["weather_condition"]
+        weather_data = "\n".join([f"{k.replace('_', ' ').capitalize()}: {v}" for k,v in res_weather.json().items()])
+
+        is_sunny = weather_condition.lower() in ["sunny", "clear", "partly cloudy", "cloudy"]
 
         buttons = [
             [
@@ -165,39 +189,56 @@ class TelegramBot:
                     text="\U0001F374 Restaurants",
                     callback_data=PLACES_RESTAURANTS,
                 ),
-            ],
+            ] if not is_sunny else [],
             [
                 InlineKeyboardButton(
                     text="\U0001F333 Parks",
                     callback_data=PLACES_PARKS,
                 ),
-            ],
+            ] if is_sunny else [],
             [
                 InlineKeyboardButton(
                     text="\U00002728 Sights",
                     callback_data=PLACES_SIGHTS,
                 ),                
 
-            ],
+            ] if is_sunny else [],
             [                
                 InlineKeyboardButton(
                     text="\U0001F5FF Museums",
                     callback_data=PLACES_MUSEUMS,
                 ),
-            ],
+            ] if not is_sunny else [],
         ]
 
         keyboard = InlineKeyboardMarkup(buttons)
 
         update.message.reply_photo(
-            photo="https://openweathermap.org/themes/openweathermap/assets/vendor/owm/img/precipitation_new.jpg",
-            caption="Here is the weather in your location.",
+            photo=map_image,
+            caption=weather_data,
             reply_markup=keyboard,
         )
 
         return WEATHER
 
     def places(self, update: Update, context: CallbackContext) -> int:
+
+        # define categories
+        categories = {
+            PLACES_RESTAURANTS: "restaurants",
+            PLACES_PARKS: "parks",
+            PLACES_MUSEUMS: "museums",
+            PLACES_SIGHTS: "sights",
+        }
+
+        # Get context data
+        parameters = {
+            "location": context.user_data["location"],
+            "category": categories[update.callback_query.data],
+        }
+
+        # Get places data
+        res_places = r.get(f"http://{BUSINESS_LAYER_URL}/places", params=parameters)
 
         # define buttons with places to visit
         buttons = [
@@ -217,19 +258,6 @@ class TelegramBot:
         )
 
         return PLACES
-    
-    def wrong_location(self, update: Update, context: CallbackContext) -> int:
-        """Handles wrong location input from the user.
-
-        Args:
-            update (Update): telegram update object
-            context (CallbackContext): telegram context object
-
-        Returns:
-            int: New state of the conversation
-        """
-        update.message.reply_text("I don't understand what you mean. Please try sending the location again.")
-        return SEARCH_LOCATION
     
     def cancel(self, update: Update, context: CallbackContext) -> int:
         update.message.reply_text("Bye! I hope we can talk again some day.")
