@@ -14,7 +14,7 @@ const CONFIG = {
 };
 
 router.get('/search', function (req, res) {
-    if (!req.query.address && req.query.address.trim() !== '') { 
+    if (!req.query.address || req.query.address.trim() == '') { 
         res.status(400).json({error: 'Address is a required parameter'});
         return;
     }

@@ -47,7 +47,7 @@ router.post("/:tgUserId", parseTgUserId, function (req, res) {
             res.status(500).json(err);
         } else {
             res.status(200).json({ 
-                id: this.lastID,
+                id: req.tgUserId,
                 lat: null,
                 lon: null,
             });
