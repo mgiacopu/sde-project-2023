@@ -60,6 +60,7 @@ class MapOverlay(Resource):
 
         # increase cintrast of precipitation overlay
         precipitation_overlay = precipitation_overlay.point(lambda p: p * 1.5)
+        
 
         # overlay precipitation on map
         map_image.paste(precipitation_overlay, (0, 0), precipitation_overlay)

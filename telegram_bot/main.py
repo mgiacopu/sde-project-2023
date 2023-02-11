@@ -166,6 +166,7 @@ class TelegramBot:
             return SEARCH_LOCATION
         
         context.user_data["location"] = location
+        print(context.user_data)
         
         map_image = BytesIO(res_map.content)
         weather_condition = res_weather.json()["weather_condition"]
@@ -219,7 +220,7 @@ class TelegramBot:
             reply_markup=keyboard,
         )
 
-        return WEATHER
+        return SEARCH_LOCATION
 
     def places(self, update: Update, context: CallbackContext) -> int:
 
@@ -233,31 +234,43 @@ class TelegramBot:
 
         # Get context data
         parameters = {
-            "location": context.user_data["location"],
+            **context.user_data.get("location"),
             "category": categories[update.callback_query.data],
         }
 
         # Get places data
         res_places = r.get(f"http://{BUSINESS_LAYER_URL}/places", params=parameters)
+        res_places = res_places.json()
 
         # define buttons with places to visit
         buttons = [
             [
                 InlineKeyboardButton(
-                    text="Place 1",
-                    url="maps.google.com/maps?q=45.516002+10.912136292242664",
+                    text=place["name"],
+                    url=f"maps.google.com/maps?q={place['lat']}+{place['lon']}",
                 ),
-            ],
+            ] for place in res_places
         ]
 
         keyboard = InlineKeyboardMarkup(buttons)
 
         update.callback_query.message.reply_text(
-            text="Cool places",
+            text="Here are some places to visit:",
             reply_markup=keyboard,
         )
 
         return PLACES
+    
+    def wrong_location(self, update: Update, context: CallbackContext) -> int:
+        """Handles wrong location input from the user.
+        Args:
+            update (Update): telegram update object
+            context (CallbackContext): telegram context object
+        Returns:
+            int: New state of the conversation
+        """
+        update.message.reply_text("I don't understand what you mean. Please try sending the location again.")
+        return SEARCH_LOCATION
     
     def cancel(self, update: Update, context: CallbackContext) -> int:
         update.message.reply_text("Bye! I hope we can talk again some day.")
