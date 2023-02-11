@@ -220,7 +220,7 @@ class TelegramBot:
             reply_markup=keyboard,
         )
 
-        return SEARCH_LOCATION
+        return WEATHER
 
     def places(self, update: Update, context: CallbackContext) -> int:
 

@@ -109,6 +109,17 @@ class WeatherInfo(Resource):
         return weather_info
     
 class RecommendedPlaces(Resource):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.categories = {
+            "restaurants": "catering.restaurant",
+            "parks": "leisure.park",
+            "museums": "entertainment.museum",
+            "sights": "tourism.sights",
+        }
+
     def get(self):
 
         args = request.args
@@ -124,15 +135,22 @@ class RecommendedPlaces(Resource):
         parameters = {
             'lat': coordinates["lat"],
             'lon': coordinates["lon"],
+            'categories': self.categories[args.get('category')],
         }
 
         res = r.get(f"{DATA_LAYER_URL}/places", params=parameters)
 
-        return res.json()
+        to_return = [{
+            "name": place["properties"].get("name") or place["properties"].get("address_line1"),
+            "lat": place["properties"]["lat"],
+            "lon": place["properties"]["lon"],
+        } for place in res.json()['features']]
+
+        return to_return
 
 api.add_resource(MapOverlay, '/map')
 api.add_resource(WeatherInfo, '/weather')
-api.add_resource(RecommendedPlaces, '/')
+api.add_resource(RecommendedPlaces, '/places')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=80)
