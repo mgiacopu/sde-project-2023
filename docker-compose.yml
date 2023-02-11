@@ -22,4 +22,6 @@ services:
       context: ./data-layers
     ports:
       - "8083:80"
-    command: run start
+    volumes:
+      - ./data-layers/adapters:/app/adapters
+    command: run dev
