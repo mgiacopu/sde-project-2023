@@ -6,7 +6,7 @@ const { OWM_API_KEY, GEOAPIFY_KEY } = require('../secrets');
 
 const OWM_BASE_URL = "https://tile.openweathermap.org/map";
 const GEOAPIFY_URL = "https://maps.geoapify.com/v1/tile";
-const ZOOM = 15;
+const ZOOM = 12;
 
 function lon2tile(lon, zoom) { return (Math.floor(((lon + 180) / 360) * Math.pow(2, zoom))); }
 function lat2tile(lat, zoom) { return (Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom))); }
