@@ -168,6 +168,8 @@ class TelegramBot:
     def save_fav_location(self, update: Update, context: CallbackContext) -> int:
         
         res = r.patch(f"http://{BUSINESS_LAYER_URL}/user/{context.user_data['user_id']}", json=context.user_data["location"])
+        if res.status_code == 200:
+            update.callback_query.answer("Location saved as favourite!")
 
         return WEATHER
 
