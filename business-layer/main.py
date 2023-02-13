@@ -82,9 +82,16 @@ class MapOverlay(Resource):
         # get the map tiles
         for i in range(2):
             for j in range(2):
-                res = r.get(f"{DATA_LAYER_URL}/map", params={"lon":0, "lat": 0, "x": x_tile + i + x_tile_offset, "y": y_tile + j + y_tile_offset, "zoom": self.zoom})
+
+                parameters = {
+                    'x': x_tile + i + x_tile_offset,
+                    'y': y_tile + j + y_tile_offset,
+                    'zoom': self.zoom
+                }
+
+                res = r.get(f"{DATA_LAYER_URL}/map", params=parameters)
                 map_image = Image.open(BytesIO(res.content))
-                res = r.get(f"{DATA_LAYER_URL}/map/precipitations", params={"lon":0, "lat": 0, "x": x_tile + i + x_tile_offset, "y": y_tile + j + y_tile_offset, "zoom": self.zoom})
+                res = r.get(f"{DATA_LAYER_URL}/map/precipitations", params=parameters)
                 precipitation_overlay = Image.open(BytesIO(res.content))
 
                 # paste precipitation overlay on map
