@@ -10,4 +10,4 @@ RUN pip install -r /tmp/requirements.txt
 
 WORKDIR /app/
 
-ENTRYPOINT ["watchmedo", "auto-restart", "--pattern=*.py", "--recursive", "--signal", "SIGTERM", "python3"]
+ENTRYPOINT ["python3"]

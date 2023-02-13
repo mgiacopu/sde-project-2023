@@ -13,15 +13,15 @@ const GEOAPIFY_PLACES_URL = "https://api.geoapify.com/v2/places";
 router.get('/', function (req, res) {
     const lon = req.lon;
     const lat = req.lat;
+    const categories = req.query.categories;
 
-    let categories = ['catering'].join(',');
     let config = {
         url: `${GEOAPIFY_PLACES_URL}`,
         params: {
             apiKey: GEOAPIFY_KEY,
             categories: categories,
             filter: `circle:${lon},${lat},5000`,
-            bias: `proximity:${lon},${lat}`,
+            // bias: `proximity:${lon},${lat}`,
             limit: 5
         },
     };
