@@ -11,9 +11,52 @@ const CONFIG = {
 };
 
 /**
- * @see https://openweathermap.org/api/air-pollution
- */
-router.get('/', function (req, res) { 
+* @openapi
+* /adapters/v1/air_pollution:
+*   get:
+*     description: Get the current air pollution data for a given location
+*     parameters:
+*       - in: query
+*         name: lat
+*         schema:
+*           type: number
+*         required: true
+*         description: Latitude
+*       - in: query
+*         name: lon
+*         schema:
+*           type: number
+*         required: true
+*         description: Longitude
+*     produces:
+*       - application/json
+*     responses:
+*       200:
+*         description: Return current air quality info
+*       400:
+*         description: Invalid parameters
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 error:
+*                   type: string
+*                   description: Error message
+*       500:
+*         description: Internal server error
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 error:
+*                   type: string
+*                   description: Error message
+*
+* @see https://openweathermap.org/api/air-pollution
+*/
+router.get('/', function (req, res) {
     const lat = req.lat;
     const lon = req.lon;
 
@@ -32,11 +75,61 @@ router.get('/', function (req, res) {
         })
         .catch(err => {
             console.log(err.response)
-            res.status(500).json(err);
+            res.status(500).json({ error: err });
         });
 });
 
-router.get('/forecast', function (req, res) { 
+/**
+* @openapi
+* /adapters/v1/air_pollution/forecast:
+*   get:
+*     description: Get the air pollution data for a given location and day
+*     parameters:
+*       - in: query
+*         name: lat
+*         schema:
+*           type: number
+*         required: true
+*         description: Latitude
+*       - in: query
+*         name: lon
+*         schema:
+*           type: number
+*         required: true
+*         description: Longitude
+*       - in: query
+*         name: day
+*         schema:
+*           type: string
+*         required: true
+*         description: Day in the format YYYY-MM-DD
+*     produces:
+*       - application/json
+*     responses:
+*       200:
+*         description: Return air quality info for the requested day
+*       400:
+*         description: Invalid parameters
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 error:
+*                   type: string
+*                   description: Error message
+*       500:
+*         description: Internal server error
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 error:
+*                   type: string
+*                   description: Error message
+*/
+router.get('/forecast', function (req, res) {
     const lat = req.lat;
     const lon = req.lon;
     const dayQuery = req.query.day;
@@ -45,7 +138,7 @@ router.get('/forecast', function (req, res) {
         res.status(400).json({ error: "Invalid day" });
         return;
     }
-    
+
     const day = dtQuery.getFullYear() + "-" + (dtQuery.getMonth() + 1) + "-" + dtQuery.getDate();
 
     let config = {
@@ -74,7 +167,7 @@ router.get('/forecast', function (req, res) {
         })
         .catch(err => {
             console.log(err.response)
-            res.status(500).json(err);
+            res.status(500).json({ error: err });
         });
 });
 

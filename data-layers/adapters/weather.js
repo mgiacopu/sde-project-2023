@@ -12,9 +12,52 @@ const CONFIG = {
 };
 
 /**
- * @see https://www.weatherapi.com/docs/
- */
-router.get('/current', function (req, res) { 
+* @openapi
+* /adapters/v1/weather/current:
+*   get:
+*     description: Get the current weather info for a given location
+*     parameters:
+*       - in: query
+*         name: lat
+*         schema:
+*           type: number
+*         required: true
+*         description: Latitude
+*       - in: query
+*         name: lon
+*         schema:
+*           type: number
+*         required: true
+*         description: Longitude
+*     produces:
+*       - application/json
+*     responses:
+*       200:
+*         description: Return the current weather info
+*       400:
+*         description: Invalid parameters
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 error:
+*                   type: string
+*                   description: Error message
+*       500:
+*         description: Internal server error
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 error:
+*                   type: string
+*                   description: Error message
+
+* @see https://www.weatherapi.com/docs/
+*/
+router.get('/current', function (req, res) {
     const lat = req.lat;
     const lon = req.lon;
 
@@ -37,12 +80,61 @@ router.get('/current', function (req, res) {
         })
         .catch(err => {
             console.log(err)
-            res.status(500).json({error: err});
+            res.status(500).json({ error: err });
         });
 });
 
-
-router.get('/forecast', function (req, res) { 
+/**
+* @openapi
+* /adapters/v1/weather/forecast:
+*   get:
+*     description: Get the weather info for a given location and day
+*     parameters:
+*       - in: query
+*         name: lat
+*         schema:
+*           type: number
+*         required: true
+*         description: Latitude
+*       - in: query
+*         name: lon
+*         schema:
+*           type: number
+*         required: true
+*         description: Longitude
+*       - in: query
+*         name: day
+*         schema:
+*           type: string
+*         required: true
+*         description: Day to get forecast for in YYYY-MM-DD format
+*     produces:
+*       - application/json
+*     responses:
+*       200:
+*         description: Return the weather info
+*       400:
+*         description: Invalid parameters
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 error:
+*                   type: string
+*                   description: Error message
+*       500:
+*         description: Internal server error
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 error:
+*                   type: string
+*                   description: Error message
+*/
+router.get('/forecast', function (req, res) {
     const lat = req.lat;
     const lon = req.lon;
     const dayQuery = req.query.day;
@@ -51,9 +143,9 @@ router.get('/forecast', function (req, res) {
         res.status(400).json({ error: "Invalid day" });
         return;
     }
-    
+
     const day = dt.getFullYear() + "-" + (dt.getMonth() + 1) + "-" + dt.getDate();
-    
+
     let config = {
         ...CONFIG,
         params: {
@@ -78,7 +170,7 @@ router.get('/forecast', function (req, res) {
         })
         .catch(err => {
             console.log(err)
-            res.status(500).json({error: err});
+            res.status(500).json({ error: err });
         });
 });
 

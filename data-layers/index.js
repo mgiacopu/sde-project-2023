@@ -1,18 +1,60 @@
 const http = require('http');
 const express = require('express');
 const axios = require('axios');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJSDoc = require('swagger-jsdoc');
 
 /**
  * Default configuration for axios web requests
  */
 axios.defaults.method = 'get';
-axios.defaults.headers = { 
-    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:107.0) Gecko/20100101 Firefox/109.0', 
+axios.defaults.headers = {
+    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:107.0) Gecko/20100101 Firefox/109.0',
 };
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const options = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'SDE Final Project',
+            version: '1.0.0',
+        },
+        servers: [{
+            url: "http://localhost:80/api/",
+            description: "Development server"
+        },
+        ],
+    },
+    components: {
+        responses: {
+            BadRequest: {
+                description: 'Invalid parameters',
+                content: {
+                    'application/json': {
+                        schema: {
+                            $ref: '#/components/schemas/Error'
+                        }
+                    }
+                }
+            },
+        },
+    },
+    apis: [
+        './adapters/air_pollution.js',
+        './adapters/geocoding.js',
+        './adapters/map.js',
+        './adapters/places.js',
+        './adapters/weather.js',
+        './db/user.js',
+    ], // files containing annotations as above
+};
+// Initialize swagger-jsdoc -> returns validated swagger spec in json format
+const swaggerSpec = swaggerJSDoc(options);
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
 /**
