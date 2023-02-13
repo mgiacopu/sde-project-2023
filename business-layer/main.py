@@ -37,6 +37,13 @@ app = Flask(__name__)
 api = Api(app)
     
 class MapOverlay(Resource):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.map_size = 256
+        self.icon_size = 80
+
     def get(self):
 
         args = request.args
@@ -54,38 +61,54 @@ class MapOverlay(Resource):
             'lon': coordinates["lon"],
         }
 
-        # get map image
-        res = r.get(f"{DATA_LAYER_URL}/map", params=parameters)
-        map_image = Image.open(BytesIO(res.content))
+        # get the coordinates of the location in the tile
+        x, y = deg2num(float(coordinates["lat"]), float(coordinates["lon"]), 12)
+        x_tile = math.floor(x)
+        y_tile = math.floor(y)
+        x_location = x - x_tile
+        y_location = y - y_tile
+        x_tile_offset = 0
+        y_tile_offset = 0
 
-        # get precipitation overlay
-        res = r.get(f"{DATA_LAYER_URL}/map/precipitations", params=parameters)
-        precipitation_overlay = Image.open(BytesIO(res.content))
+        if x_location < 0.5:
+            x_tile_offset -= 1
+        
+        if y_location < 0.5:
+            y_tile_offset -= 1
 
-        # increase cintrast of precipitation overlay
-        precipitation_overlay = precipitation_overlay.point(lambda p: p * 1.5)
+        base_canvas = Image.new('RGBA', (self.map_size * 2, self.map_size * 2), (0, 0, 0, 0))
+
+        # get the map tiles
+        for i in range(2):
+            for j in range(2):
+                res = r.get(f"{DATA_LAYER_URL}/map", params={"lon":0, "lat": 0, "x": x_tile + i + x_tile_offset, "y": y_tile + j + y_tile_offset})
+                map_image = Image.open(BytesIO(res.content))
+                res = r.get(f"{DATA_LAYER_URL}/map/precipitations", params=parameters)
+                precipitation_overlay = Image.open(BytesIO(res.content))
+
+                # paste precipitation overlay on map
+                map_image.paste(precipitation_overlay, (0, 0), precipitation_overlay)
+
+                base_canvas.paste(map_image, (i * self.map_size, j * self.map_size))
 
         # get weather icon
         res = r.get(f"{DATA_LAYER_URL}/weather/current", params=parameters)
         icon_url = "https://" + res.json()['current']['condition']['icon'][2:]
         weather_icon = Image.open(BytesIO(r.get(icon_url).content))
-        weather_icon = weather_icon.resize((70, 70))
+        weather_icon = weather_icon.resize((self.icon_size, self.icon_size))
 
-        # get floating part of coordinates of the map image
-        x, y = deg2num(float(coordinates["lat"]), float(coordinates["lon"]), 12)
-        x = x - math.floor(x)
-        y = y - math.floor(y)
         # calculate offset of weather icon
-        map_size = map_image.size[0]
-        icon_size = weather_icon.size[0] // 2
-        offset = (int(x * map_size) - icon_size, int(y * map_size) - icon_size)
+        offset = (
+            (abs(x_tile_offset) * self.map_size) + int(x_location * self.map_size) - self.icon_size // 2,
+            (abs(y_tile_offset) * self.map_size) + int(y_location * self.map_size) - self.icon_size // 2
+        )
 
-        # overlay precipitation on map
-        map_image.paste(precipitation_overlay, (0, 0), precipitation_overlay)
-        map_image.paste(weather_icon, offset, weather_icon)
+        # # overlay precipitation on map
+        # map_image.paste(precipitation_overlay, (0, 0), precipitation_overlay)
+        base_canvas.paste(weather_icon, offset, weather_icon)
 
-        return serve_pil_image(map_image)
-
+        return serve_pil_image(base_canvas)
+ 
 class WeatherInfo(Resource):
 
     def __init__(self) -> None:
