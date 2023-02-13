@@ -5,7 +5,7 @@ import math
 from PIL import Image
 from io import BytesIO
 
-DATA_LAYER_URL = 'http://data-layers/v1'
+DATA_LAYER_URL = 'http://data-layers/api'
 
 def serve_pil_image(pil_img):
     img_io = BytesIO()
@@ -18,7 +18,7 @@ def get_coordinates(location):
         'address': location
     }
 
-    res = r.get(f"{DATA_LAYER_URL}/geocoding/search", params=parameters)
+    res = r.get(f"{DATA_LAYER_URL}/adapters/v1/geocoding/search", params=parameters)
 
     # If the geocoding service returns an error, return the error
     if res.status_code != 200:
@@ -27,11 +27,11 @@ def get_coordinates(location):
     return res.json()
 
 def deg2num(lat_deg, lon_deg, zoom):
-  lat_rad = math.radians(lat_deg)
-  n = 2.0 ** zoom
-  xtile = (lon_deg + 180.0) / 360.0 * n
-  ytile = (1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n
-  return (xtile, ytile)
+    lat_rad = math.radians(lat_deg)
+    n = 2.0 ** zoom
+    xtile = (lon_deg + 180.0) / 360.0 * n
+    ytile = (1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n
+    return (xtile, ytile)
 
 app = Flask(__name__)
 api = Api(app)
@@ -89,9 +89,9 @@ class MapOverlay(Resource):
                     'zoom': self.zoom
                 }
 
-                res = r.get(f"{DATA_LAYER_URL}/map", params=parameters)
+                res = r.get(f"{DATA_LAYER_URL}/adapters/v1/map", params=parameters)
                 map_image = Image.open(BytesIO(res.content))
-                res = r.get(f"{DATA_LAYER_URL}/map/precipitations", params=parameters)
+                res = r.get(f"{DATA_LAYER_URL}/adapters/v1/map/precipitations", params=parameters)
                 precipitation_overlay = Image.open(BytesIO(res.content))
 
                 # paste precipitation overlay on map
@@ -100,7 +100,7 @@ class MapOverlay(Resource):
                 base_canvas.paste(map_image, (i * self.map_size, j * self.map_size))
 
         # get weather icon
-        res = r.get(f"{DATA_LAYER_URL}/weather/current", params=parameters)
+        res = r.get(f"{DATA_LAYER_URL}/adapters/v1/weather/current", params=parameters)
         icon_url = "https://" + res.json()['current']['condition']['icon'][2:]
         weather_icon = Image.open(BytesIO(r.get(icon_url).content))
         weather_icon = weather_icon.resize((self.icon_size, self.icon_size))
@@ -149,7 +149,7 @@ class WeatherInfo(Resource):
 
         weather_info = {}
 
-        res = r.get(f"{DATA_LAYER_URL}/weather/current", params=parameters)
+        res = r.get(f"{DATA_LAYER_URL}/adapters/v1/weather/current", params=parameters)
         weather_info["temperature"] = f"{res.json()['current']['temp_c']}°C"
         weather_info["humidity"] = f"{res.json()['current']['humidity']}%"
         weather_info["precipitation"] = f"{res.json()['current']['precip_mm']}mm"
@@ -157,7 +157,7 @@ class WeatherInfo(Resource):
         
         res = r.get(f"{DATA_LAYER_URL}/air_pollution", params=parameters)
 
-        weather_info["air_quality"] = self.air_quality[res.json()['list'][0]['main']['aqi']]
+        weather_info["air_quality"] = self.air_quality[res.json()['main']['aqi']]
 
 
         return weather_info
@@ -192,13 +192,13 @@ class RecommendedPlaces(Resource):
             'categories': self.categories[args.get('category')],
         }
 
-        res = r.get(f"{DATA_LAYER_URL}/places", params=parameters)
+        res = r.get(f"{DATA_LAYER_URL}/adapters/v1/places", params=parameters)
 
         to_return = [{
             "name": place["properties"].get("name") or place["properties"].get("address_line1"),
             "lat": place["properties"]["lat"],
             "lon": place["properties"]["lon"],
-        } for place in res.json()['features']]
+        } for place in res.json()]
 
         return to_return
     
@@ -206,11 +206,11 @@ class User(Resource):
     def get(self, user_id):
 
         # Check if user exists
-        res = r.get(f"{DATA_LAYER_URL}/db/user/{user_id}")
+        res = r.get(f"{DATA_LAYER_URL}/db/v1/user/{user_id}")
 
         # If user does not exist, create it
-        if res.status_code == 400:
-            res = r.post(f"{DATA_LAYER_URL}/db/user/{user_id}")
+        if res.status_code == 404:
+            res = r.post(f"{DATA_LAYER_URL}/db/v1/user/{user_id}")
 
         # Return user info
         return {
@@ -235,7 +235,7 @@ class User(Resource):
                 'lon': coordinates["lon"],
             }
     
-            res = r.patch(f"{DATA_LAYER_URL}/db/user/{user_id}", data=parameters)
+            res = r.patch(f"{DATA_LAYER_URL}/db/v1/user/{user_id}", data=parameters)
     
             return {
                 "lon": res.json()["lon"],
