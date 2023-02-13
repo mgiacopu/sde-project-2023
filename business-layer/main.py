@@ -27,10 +27,6 @@ def get_coordinates(location):
 
 app = Flask(__name__)
 api = Api(app)
-
-class HelloWorld(Resource):
-    def get(self):
-        return {'hello': 'world'}
     
 class MapOverlay(Resource):
     def get(self):
@@ -68,6 +64,18 @@ class MapOverlay(Resource):
         return serve_pil_image(map_image)
 
 class WeatherInfo(Resource):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.air_quality = {
+            1: "Good",
+            2: "Fair",
+            3: "Moderate",
+            4: "Poor",
+            5: "Very Poor",
+        }
+
     def get(self):
 
         args = request.args
@@ -95,15 +103,7 @@ class WeatherInfo(Resource):
         
         res = r.get(f"{DATA_LAYER_URL}/air_pollution", params=parameters)
 
-        aq = {
-            1: "Good",
-            2: "Fair",
-            3: "Moderate",
-            4: "Poor",
-            5: "Very Poor",
-        }
-
-        weather_info["air_quality"] = aq[res.json()['list'][0]['main']['aqi']]
+        weather_info["air_quality"] = self.air_quality[res.json()['list'][0]['main']['aqi']]
 
 
         return weather_info
@@ -147,10 +147,52 @@ class RecommendedPlaces(Resource):
         } for place in res.json()['features']]
 
         return to_return
+    
+class User(Resource):
+    def get(self, user_id):
+
+        # Check if user exists
+        res = r.get(f"{DATA_LAYER_URL}/db/user/{user_id}")
+
+        # If user does not exist, create it
+        if res.status_code == 400:
+            res = r.post(f"{DATA_LAYER_URL}/db/user/{user_id}")
+
+        # Return user info
+        return {
+            "lon": res.json()["lon"],
+            "lat": res.json()["lat"],
+        }
+    
+    def patch(self, user_id):
+            
+            args = request.get_json()
+    
+            coordinates = {
+                "lat": args.get("lat"),
+                "lon": args.get("lon"),
+            }
+    
+            if args.get('location'):
+                coordinates = get_coordinates(args.get('location'))
+    
+            parameters = {
+                'lat': coordinates["lat"],
+                'lon': coordinates["lon"],
+            }
+    
+            res = r.patch(f"{DATA_LAYER_URL}/db/user/{user_id}", data=parameters)
+    
+            return {
+                "lon": res.json()["lon"],
+                "lat": res.json()["lat"],
+            }
 
 api.add_resource(MapOverlay, '/map')
 api.add_resource(WeatherInfo, '/weather')
 api.add_resource(RecommendedPlaces, '/places')
+api.add_resource(User, '/user/<string:user_id>')
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=80)

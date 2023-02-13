@@ -57,7 +57,13 @@ def CQH(callback: Callable, pattern: str) -> CallbackQueryHandler:
     PLACES_SIGHTS,
     PLACES_MUSEUMS,
     PLACES,
-) = map(chr, range(12))
+    SAVE_LOCATION,
+) = map(chr, range(13))
+
+# Back buttons
+(
+    BACK_WEATHER,
+) = map(chr, range(1000, 1001))
 
 class TelegramBot:
 
@@ -72,7 +78,7 @@ class TelegramBot:
             entry_points=[CommandHandler("start", self.start)],
             states={
                 SELECT_INPUT: [
-                    CQH(self.retrieve_fav_location, FAV_LOCATION),
+                    CQH(self.use_fav_location, FAV_LOCATION),
                     CQH(self.ask_for_location, SEARCH_LOCATION),
                 ],
                 SEARCH_LOCATION: [
@@ -80,6 +86,7 @@ class TelegramBot:
                     MessageHandler(~(Filters.text | Filters.location), self.wrong_location),
                 ],
                 WEATHER: [
+                    CQH(self.save_fav_location, SAVE_LOCATION),
                     CQH(self.places, PLACES_RESTAURANTS),
                     CQH(self.places, PLACES_PARKS),
                     CQH(self.places, PLACES_MUSEUMS),
@@ -88,7 +95,9 @@ class TelegramBot:
                 PLACES: [
                 ],
             },
-            fallbacks=[CommandHandler("end", self.cancel)],
+            fallbacks=[
+                CommandHandler("end", self.cancel),
+            ],
         )
 
         dispatcher.add_handler(main_handler)
@@ -105,8 +114,16 @@ class TelegramBot:
         Returns:
             int: New state of the conversation
         """
+
+        res = r.get(f"http://{BUSINESS_LAYER_URL}/user/{update.message.from_user.id}")
+        user_location = res.json()
+
+        context.user_data["user_id"] = update.message.from_user.id
+
+        if user_location.get("lon") and user_location.get("lat"):
+            context.user_data["fav_location"] = user_location
         
-        text = "Select your input method."
+        text = f"Select your input method."
 
         buttons = [
             [
@@ -114,7 +131,7 @@ class TelegramBot:
                     text="\U0001F4CD Favourite Location",
                     callback_data=FAV_LOCATION,
                 ),
-            ],
+            ] if user_location.get("lon") and user_location.get("lat") else [],
                         [
                 InlineKeyboardButton(
                     text="\U0001F50E Search new Location",
@@ -141,15 +158,27 @@ class TelegramBot:
 
         return SEARCH_LOCATION
     
-    def retrieve_fav_location(self, update: Update, context: CallbackContext) -> int:
-        pass
+    def use_fav_location(self, update: Update, context: CallbackContext) -> int:
+        
+        context.user_data["location"] = context.user_data["fav_location"]
+        update.message = update.callback_query.message
+
+        return self.verify_location(update, context)
+    
+    def save_fav_location(self, update: Update, context: CallbackContext) -> int:
+        
+        res = r.patch(f"http://{BUSINESS_LAYER_URL}/user/{context.user_data['user_id']}", json=context.user_data["location"])
+
+        return WEATHER
 
     def verify_location(self, update: Update, context: CallbackContext) -> int:
         
         search_message = update.message.reply_text("I'm searching for the weather in the provided location...")
 
         # Get user input
-        if update.message.location:
+        if context.user_data.get("location"):
+            location = context.user_data["location"]
+        elif update.message.location:
             location = update.message.location
             location = dict(lat=location.latitude, lon=location.longitude)
         else:
@@ -166,7 +195,6 @@ class TelegramBot:
             return SEARCH_LOCATION
         
         context.user_data["location"] = location
-        print(context.user_data)
         
         map_image = BytesIO(res_map.content)
         weather_condition = res_weather.json()["weather_condition"]
@@ -183,6 +211,12 @@ class TelegramBot:
                 InlineKeyboardButton(
                     text="\U000025B6",
                     callback_data=NEXT,
+                ),
+            ],
+                        [
+                InlineKeyboardButton(
+                    text="\U0001F4CD Save favourite location",
+                    callback_data=SAVE_LOCATION,
                 ),
             ],
             [
