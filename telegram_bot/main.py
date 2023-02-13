@@ -310,6 +310,9 @@ class TelegramBot:
     
     def cancel(self, update: Update, context: CallbackContext) -> int:
         update.message.reply_text("Bye! I hope we can talk again some day.")
+
+        context.user_data.clear()
+
         return ConversationHandler.END
 
 if __name__ == "__main__":
