@@ -1,6 +1,7 @@
 from flask import Flask, send_file, request, abort
 from flask_restful import Resource, Api
 import requests as r
+import math
 from PIL import Image
 from io import BytesIO
 
@@ -24,6 +25,13 @@ def get_coordinates(location):
         abort(404, res.json())
 
     return res.json()
+
+def deg2num(lat_deg, lon_deg, zoom):
+  lat_rad = math.radians(lat_deg)
+  n = 2.0 ** zoom
+  xtile = (lon_deg + 180.0) / 360.0 * n
+  ytile = (1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n
+  return (xtile, ytile)
 
 app = Flask(__name__)
 api = Api(app)
@@ -56,10 +64,25 @@ class MapOverlay(Resource):
 
         # increase cintrast of precipitation overlay
         precipitation_overlay = precipitation_overlay.point(lambda p: p * 1.5)
-        
+
+        # get weather icon
+        res = r.get(f"{DATA_LAYER_URL}/weather/current", params=parameters)
+        icon_url = "https://" + res.json()['current']['condition']['icon'][2:]
+        weather_icon = Image.open(BytesIO(r.get(icon_url).content))
+        weather_icon = weather_icon.resize((70, 70))
+
+        # get floating part of coordinates of the map image
+        x, y = deg2num(float(coordinates["lat"]), float(coordinates["lon"]), 12)
+        x = x - math.floor(x)
+        y = y - math.floor(y)
+        # calculate offset of weather icon
+        map_size = map_image.size[0]
+        icon_size = weather_icon.size[0] // 2
+        offset = (int(x * map_size) - icon_size, int(y * map_size) - icon_size)
 
         # overlay precipitation on map
         map_image.paste(precipitation_overlay, (0, 0), precipitation_overlay)
+        map_image.paste(weather_icon, offset, weather_icon)
 
         return serve_pil_image(map_image)
 
