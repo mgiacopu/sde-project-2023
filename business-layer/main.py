@@ -43,6 +43,7 @@ class MapOverlay(Resource):
 
         self.map_size = 256
         self.icon_size = 80
+        self.zoom = 12
 
     def get(self):
 
@@ -62,7 +63,7 @@ class MapOverlay(Resource):
         }
 
         # get the coordinates of the location in the tile
-        x, y = deg2num(float(coordinates["lat"]), float(coordinates["lon"]), 12)
+        x, y = deg2num(float(coordinates["lat"]), float(coordinates["lon"]), self.zoom)
         x_tile = math.floor(x)
         y_tile = math.floor(y)
         x_location = x - x_tile
@@ -81,9 +82,9 @@ class MapOverlay(Resource):
         # get the map tiles
         for i in range(2):
             for j in range(2):
-                res = r.get(f"{DATA_LAYER_URL}/map", params={"lon":0, "lat": 0, "x": x_tile + i + x_tile_offset, "y": y_tile + j + y_tile_offset})
+                res = r.get(f"{DATA_LAYER_URL}/map", params={"lon":0, "lat": 0, "x": x_tile + i + x_tile_offset, "y": y_tile + j + y_tile_offset, "zoom": self.zoom})
                 map_image = Image.open(BytesIO(res.content))
-                res = r.get(f"{DATA_LAYER_URL}/map/precipitations", params=parameters)
+                res = r.get(f"{DATA_LAYER_URL}/map/precipitations", params={"lon":0, "lat": 0, "x": x_tile + i + x_tile_offset, "y": y_tile + j + y_tile_offset, "zoom": self.zoom})
                 precipitation_overlay = Image.open(BytesIO(res.content))
 
                 # paste precipitation overlay on map
