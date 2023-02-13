@@ -8,9 +8,6 @@ const OWM_BASE_URL = "https://tile.openweathermap.org/map";
 const GEOAPIFY_URL = "https://maps.geoapify.com/v1/tile";
 const ZOOM = 15;
 
-function lon2tile(lon, zoom) { return (Math.floor(((lon + 180) / 360) * Math.pow(2, zoom))); }
-function lat2tile(lat, zoom) { return (Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom))); }
-
 /**
 * @openapi
 * /adapters/v1/map:
@@ -18,23 +15,26 @@ function lat2tile(lat, zoom) { return (Math.floor((1 - Math.log(Math.tan(lat * M
 *     description: Get the map tile for a given location
 *     parameters:
 *       - in: query
-*         name: lat
+*         name: x
 *         schema:
 *           type: number
 *         required: true
-*         description: Latitude
+*         description: Coordinate x of tile
+*         example: 8698
 *       - in: query
-*         name: lon
+*         name: y
 *         schema:
 *           type: number
 *         required: true
-*         description: Longitude
+*         description: Coordinate y of tile
+*         example: 5824
 *       - in: query
 *         name: zoom
 *         schema:
 *           type: integer
 *         required: false
 *         description: Zoom level between 1 and 18
+*         example: 14
 *     produces:
 *       - image/png
 *     responses:
@@ -65,15 +65,8 @@ function lat2tile(lat, zoom) { return (Math.floor((1 - Math.log(Math.tan(lat * M
 */
 router.get('/', function (req, res) {
     const zoom = parseInt(req.query.zoom) || ZOOM;
-    const lon = req.lon;
-    const lat = req.lat;
-    const x = lon2tile(lon, zoom);
-    const y = lat2tile(lat, zoom);
-
-    console.log("/map");
-    console.log("zoom:", zoom);
-    console.log("lon:", lon, "x:", x);
-    console.log("lat:", lat, "y:", y);
+    const x = req.x;
+    const y = req.y;
 
     const MAP_STYLE = "osm-bright";
     let config = {
@@ -108,23 +101,26 @@ router.get('/', function (req, res) {
 *     description: Get the precipitation overlay tile for a given location
 *     parameters:
 *       - in: query
-*         name: lat
+*         name: x
 *         schema:
 *           type: number
 *         required: true
-*         description: Latitude
+*         description: Coordinate x of tile
+*         example: 8698
 *       - in: query
-*         name: lon
+*         name: y
 *         schema:
 *           type: number
 *         required: true
-*         description: Longitude
+*         description: Coordinate y of tile
+*         example: 5824
 *       - in: query
 *         name: zoom
 *         schema:
 *           type: integer
 *         required: false
 *         description: Zoom level between 1 and 18
+*         example: 14
 *     produces:
 *       - image/png
 *     responses:
@@ -156,15 +152,8 @@ router.get('/', function (req, res) {
 */
 router.get('/precipitations', function (req, res) {
     const zoom = parseInt(req.query.zoom) || ZOOM;
-    const lon = req.lon;
-    const lat = req.lat;
-    const x = lon2tile(lon, zoom);
-    const y = lat2tile(lat, zoom);
-
-    console.log("/map/precipitations");
-    console.log("zoom:", zoom);
-    console.log("lon:", lon, "x:", x);
-    console.log("lat:", lat, "y:", y);
+    const x = req.x;
+    const y = req.y;
 
     let config = {
         url: `${OWM_BASE_URL}/precipitation_new/${zoom}/${x}/${y}.png`,

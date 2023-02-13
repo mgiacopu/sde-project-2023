@@ -61,7 +61,7 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  * ADAPTER LAYER
 */
 const routerAdapterLayer = express.Router();
-const { parseLonLat } = require('./middleware');
+const { parseLonLat, parseXY } = require('./middleware');
 
 const geocodings = require('./adapters/geocoding');
 routerAdapterLayer.use('/v1/geocoding/', geocodings);
@@ -70,7 +70,7 @@ routerAdapterLayer.use('/v1/air_pollution/', parseLonLat, air_pollution);
 const weather = require('./adapters/weather');
 routerAdapterLayer.use('/v1/weather/', parseLonLat, weather);
 const map = require('./adapters/map');
-routerAdapterLayer.use('/v1/map/', parseLonLat, map);
+routerAdapterLayer.use('/v1/map/', parseXY, map);
 const places = require('./adapters/places');
 routerAdapterLayer.use('/v1/places/', parseLonLat, places);
 
