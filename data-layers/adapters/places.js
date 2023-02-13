@@ -28,7 +28,7 @@ router.get('/', function (req, res) {
     axios(config)
         .then(response => {
             // console.log(response.data);
-            res.status(200).json(response.data);
+            res.status(200).json(response.data.features);
         })
         .catch(err => {
             console.log(err)
