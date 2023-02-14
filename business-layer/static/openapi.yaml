@@ -10,9 +10,9 @@ info:
     - [Data Layers APIs](http://localhost:8083/api/docs)
   version: 1.0.0
 servers:
-  - url: https://business-layer/api/v1
+  - url: http://business-layer/api/v1
     description: Internal URL
-  - url: https://localhost:8084/api/v1
+  - url: http://localhost:8084/api/v1
     description: Development URL
 paths:
   /map:
