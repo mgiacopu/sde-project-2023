@@ -75,7 +75,7 @@ class MapOverlay(Resource):
 
         self.map_size = 256
         self.icon_size = 80
-        self.zoom = 12
+        self.zoom = 7
 
     def get(self):
 
@@ -175,28 +175,28 @@ class WeatherInfo(Resource):
             'lon': coordinates["lon"],
         }
 
-        date = {}
-        info = {}
+        dates = dict()
+        info = dict()
 
         if args.get('today') != None and args.get('delta') != None:
-            date["today"] = datetime.strptime(args.get('today'), "%Y-%m-%d").date() + timedelta(days=int(args.get('delta')))
+            dates["today"] = datetime.strptime(args.get('today'), "%Y-%m-%d").date() + timedelta(days=int(args.get('delta')))
         else:
-            date["today"] = date.today()
+            dates["today"] = date.today()
         
-        date["yesterday"] = date["today"] - timedelta(days=1)
-        date["tomorrow"] = date["today"] + timedelta(days=1)
+        dates["yesterday"] = dates["today"] - timedelta(days=1)
+        dates["tomorrow"] = dates["today"] + timedelta(days=1)
 
-        info["date"] = date["today"].strftime("%Y-%m-%d")
+        info["date"] = dates["today"].strftime("%Y-%m-%d")
         
         # If the date is before current date, set to null. If the date is more than 3 days in the future, set to null.
-        if date["yesterday"] < date.today():
-            date["yesterday"] = None
-        if date["tomorrow"] > date.today() + timedelta(days=3):
-            date["tomorrow"] = None
+        if dates["yesterday"] < date.today():
+            dates["yesterday"] = None
+        if dates["tomorrow"] > date.today() + timedelta(days=3):
+            dates["tomorrow"] = None
 
-        if date["today"] == date.today():
+        if dates["today"] == date.today():
             res = r.get(f"{LAYER_ADAPTER_URL}/weather/current", params=parameters)
-            cur_info = cur_info
+            cur_info = res.json()['current']
 
             info["temperature"] = f"{cur_info['temp_c']}°C"
             info["humidity"] = f"{cur_info['humidity']}%"
@@ -206,7 +206,7 @@ class WeatherInfo(Resource):
             res = r.get(f"{LAYER_ADAPTER_URL}/air_pollution", params=parameters)
             info["air_quality"] = self.air_quality[res.json()['main']['aqi']]
         else:
-            parameters["day"] = date["today"].strftime("%Y-%m-%d")
+            parameters["day"] = dates["today"].strftime("%Y-%m-%d")
             res = r.get(f"{LAYER_ADAPTER_URL}/weather/forecast", params=parameters)
             day_info = res.json()[parameters['day']]
 
@@ -222,11 +222,11 @@ class WeatherInfo(Resource):
 
         
         # convert dates to string
-        for day in date:
-            if date[day] is not None:
-                date[day] = date[day].strftime("%Y-%m-%d")
+        for day in dates:
+            if dates[day] is not None:
+                dates[day] = dates[day].strftime("%Y-%m-%d")
 
-        return {"info": info, "date": date}
+        return {"info": info, "date": dates}
     
 class RecommendedPlaces(Resource):
     """Returns a list of recommended places for the specified location"""
