@@ -7,6 +7,8 @@ services:
     volumes:
       - ./telegram_bot:/app
     command: main.py
+    depends_on:
+      - business-layer
 
   business-layer:
     build:
@@ -16,6 +18,8 @@ services:
     ports:
       - "8084:80"
     command: main.py
+    depends_on:
+      - data-layers
 
   data-layers:
     build:
@@ -25,7 +29,7 @@ services:
     volumes:
       - ./data-layers:/app
       - node_modules:/app/node_modules/
-    command: run start
+    command: run dev
 
 volumes:
   node_modules:
