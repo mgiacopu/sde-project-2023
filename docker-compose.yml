@@ -3,9 +3,9 @@ version: "3.7"
 services:
   process-centric-layer:
     build:
-      context: ./telegram_bot
+      context: ./process-centric
     volumes:
-      - ./telegram_bot:/app
+      - ./process-centric:/app
     command: main.py
     depends_on:
       - business-layer
