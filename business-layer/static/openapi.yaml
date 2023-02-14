@@ -4,7 +4,6 @@ info:
   description: |-
     The Business Layer API is a RESTful API that provides a connetion between
     the Data Layers and the Provcess Centric Layer.
-
     
     Some useful links:
     - [Project's repository](https://github.com/mgiacopu/sde-project-2023)
@@ -13,7 +12,7 @@ info:
 servers:
   - url: https://business-layer/api/v1
     description: Internal URL
-  - url: https://localhost:8083/api/v1
+  - url: https://localhost:8084/api/v1
     description: Development URL
 paths:
   /map:
@@ -41,6 +40,21 @@ paths:
           in: query
           schema:
             type: number
+        - name: today
+          description: The day for which maps are requested. If not provided,
+            the current day is used. Must be used with the `delta` parameter.
+          example: "2023-02-15"
+          in: query
+          schema:
+            type: string
+        - name: delta
+          description: The time delta (in days) to apply the `today` parameter.
+            If not provided, the delta is considered as 0. Must e used with the
+            `today` parameter.
+          example: 1
+          in: query
+          schema:
+            type: integer
       responses:
         '200':
           description: Returns the image of the map with the pecipitation
@@ -86,6 +100,21 @@ paths:
           in: query
           schema:
             type: number
+        - name: today
+          description: The day for which maps are requested. If not provided,
+            the current day is used. Must be used with the `delta` parameter.
+          example: "2023-02-15"
+          in: query
+          schema:
+            type: string
+        - name: delta
+          description: The time delta (in days) to apply the `today` parameter.
+            If not provided, the delta is considered as 0. Must e used with the
+            `today` parameter.
+          example: 1
+          in: query
+          schema:
+            type: integer
       responses:
         '200':
           description: Returns the weather information
@@ -239,21 +268,39 @@ components:
     Weather:
       type: object
       properties:
-        temperature:
-          type: string
-          example: "20.0°C"
-        humidity:
-          type: string
-          example: "50%"
-        precipitation:
-          type: string
-          example: "3mm"
-        weather_condition:
-          type: string
-          example: "Clear"
-        air_quality:
-          type: string
-          example: "Good"
+        date: 
+          type: object
+          properties:
+            yesterday:
+              type: string
+              example: "2023-02-14"
+            today:
+              type: string
+              example: "2023-02-15"
+            tomorrow:
+              type: string
+              example: "2023-02-16"
+        info:
+          type: object
+          properties:
+            date:
+              type: string
+              example: "2023-02-15"
+            temperature:
+              type: string
+              example: "20.0°C"
+            humidity:
+              type: string
+              example: "50%"
+            precipitation:
+              type: string
+              example: "3mm"
+            weather_condition:
+              type: string
+              example: "Clear"
+            air_quality:
+              type: string
+              example: "Good"
     Places:
       type: array
       items:
