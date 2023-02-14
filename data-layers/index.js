@@ -29,20 +29,6 @@ const options = {
         },
         ],
     },
-    components: {
-        responses: {
-            BadRequest: {
-                description: 'Invalid parameters',
-                content: {
-                    'application/json': {
-                        schema: {
-                            $ref: '#/components/schemas/Error'
-                        }
-                    }
-                }
-            },
-        },
-    },
     apis: [
         './adapters/air_pollution.js',
         './adapters/geocoding.js',
