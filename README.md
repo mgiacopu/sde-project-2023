@@ -15,7 +15,7 @@ The architecture of the main services is the following:
 
 ## How to run
 Set the environment variables in the following files:
-- `.env` file of the `telegram_bot` folder, given the example in the `telegram_bot/.env.sample` file;
+- `.env` file of the `process-centric` folder, given the example in the `process-centric/.env.sample` file;
 - `secrets.js` file of the `data-layers` folder, given the example in the `data-layers/secrets.sample.js` file;
 
 Run the containers with the following command in the root folder:
@@ -27,4 +27,4 @@ At this point, the bot is listening and ready to be used.
 ## Documentation
 * Data layer: [http://localhost:8083/api/docs](http://localhost:8083/api/docs)
 * Business logic layer: [http://localhost:8084/api/docs](http://localhost:8084/api/docs)
-* Process centric layer: ![Chatbot flow](./telegram_bot/chatbot_flow.png)
+* Process centric layer: ![Chatbot flow](./process-centric/chatbot_flow.png)
