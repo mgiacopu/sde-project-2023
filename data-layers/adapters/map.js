@@ -6,6 +6,7 @@ const { OWM_API_KEY, GEOAPIFY_KEY } = require('../secrets');
 
 const OWM_BASE_URL = "https://tile.openweathermap.org/map";
 const GEOAPIFY_URL = "https://maps.geoapify.com/v1/tile";
+const MAP_STYLE = "klokantech-basic";
 const ZOOM = 12;
 
 /**
@@ -68,7 +69,6 @@ router.get('/', function (req, res) {
     const x = req.x;
     const y = req.y;
 
-    const MAP_STYLE = "osm-bright";
     let config = {
         url: `${GEOAPIFY_URL}/${MAP_STYLE}/${zoom}/${x}/${y}.png`,
         params: {
