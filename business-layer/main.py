@@ -75,7 +75,7 @@ class MapOverlay(Resource):
 
         self.map_size = 256
         self.icon_size = 80
-        self.zoom = 7
+        self.zoom = 12
 
     def get(self):
 
