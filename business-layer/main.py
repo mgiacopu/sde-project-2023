@@ -1,5 +1,6 @@
 from flask import Flask, send_file, request, abort
 from flask_restful import Resource, Api
+from flask_swagger_ui import get_swaggerui_blueprint
 import requests as r
 import math
 from PIL import Image
@@ -8,6 +9,12 @@ from io import BytesIO
 DATA_LAYER_URL = 'http://data-layers/api'
 LAYER_ADAPTER_URL = f'{DATA_LAYER_URL}/adapters/v1'
 LAYER_DATABASE_URL = f'{DATA_LAYER_URL}/db/v1'
+
+SWAGGER_URL = '/api/docs'
+OPENAPI_FILE = '/static/openapi.yaml'
+SWAGGER_CONFIG ={  
+        'app_name': "Business Layer APIs"
+    }
 
 def serve_pil_image(pil_img):
     img_io = BytesIO()
@@ -36,7 +43,8 @@ def deg2num(lat_deg, lon_deg, zoom):
     return (xtile, ytile)
 
 app = Flask(__name__)
-api = Api(app)
+app.register_blueprint(get_swaggerui_blueprint(SWAGGER_URL, OPENAPI_FILE, SWAGGER_CONFIG))
+api = Api(app, prefix="/api/v1")
     
 class MapOverlay(Resource):
 

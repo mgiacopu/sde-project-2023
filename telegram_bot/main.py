@@ -24,7 +24,7 @@ from telegram.ext import (
     CallbackContext,
 )
 
-BUSINESS_LAYER_URL = "business-layer"
+BUSINESS_LAYER_URL = "business-layer/api/v1"
 
 # Load environment variables
 load_dotenv()
