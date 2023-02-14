@@ -50,8 +50,8 @@ def CQH(callback: Callable, pattern: str) -> CallbackQueryHandler:
     WEATHER,
     FAV_LOCATION,
     SEARCH_LOCATION,
-    PREVIOUS,
-    NEXT,
+    YESTERDAY,
+    TOMORROW,
     PLACES_RESTAURANTS,
     PLACES_PARKS,
     PLACES_SIGHTS,
@@ -87,6 +87,8 @@ class TelegramBot:
                     MessageHandler(~(Filters.text | Filters.location), self.wrong_location),
                 ],
                 WEATHER: [
+                    CQH(self.yesterday, YESTERDAY),
+                    CQH(self.tomorrow, TOMORROW),
                     CQH(self.save_fav_location, SAVE_LOCATION),
                     CQH(self.places, PLACES_RESTAURANTS),
                     CQH(self.places, PLACES_PARKS),
@@ -203,34 +205,50 @@ class TelegramBot:
 
     def weather(self, update: Update, context: CallbackContext) -> int:
 
-        location = context.user_data["location"]
+        parameters = context.user_data["location"]
+
+        if context.user_data.get("tomorrow") != None:
+            parameters["delta"] = context.user_data["delta"]
+
+        if context.user_data.get("yesterday") != None:
+            parameters["delta"] = context.user_data["delta"]
+
+        if context.user_data.get("today"):
+            parameters["today"] = context.user_data["today"]
+            
+        # Get map image
+        res_map = r.get(f"http://{BUSINESS_LAYER_URL}/map", params=parameters)
+        map_image = BytesIO(res_map.content)
 
         # Get weather data
-        res_weather = r.get(f"http://{BUSINESS_LAYER_URL}/weather", params=location)
+        res_weather = r.get(f"http://{BUSINESS_LAYER_URL}/weather", params=parameters)
+        
+        weather_info = res_weather.json()
 
-        # Get map image
-        res_map = r.get(f"http://{BUSINESS_LAYER_URL}/map", params=location)
-        
-        context.user_data["location"] = location
-        
-        map_image = BytesIO(res_map.content)
-        weather_condition = res_weather.json()["weather_condition"]
-        weather_data = "\n".join([f"{k.replace('_', ' ').capitalize()}: {v}" for k,v in res_weather.json().items()])
+        weather_condition = weather_info['info']["weather_condition"]
+        weather_data = "\n".join([f"{k.replace('_', ' ').capitalize()}: {v}" for k,v in weather_info['info'].items()])
 
         is_sunny = weather_condition.lower() in ["sunny", "clear", "partly cloudy", "cloudy"]
 
+        context.user_data["today"] = weather_info["date"]["today"]
+        context.user_data["yesterday"] = False
+        context.user_data["tomorrow"] = False
+
+        days_buttons = []
+        if weather_info["date"]["yesterday"]:
+            days_buttons.append(InlineKeyboardButton(
+                text="\U000025C0",
+                callback_data=YESTERDAY,
+            ))
+        if weather_info["date"]["tomorrow"]:
+            days_buttons.append(InlineKeyboardButton(
+                text="\U000025B6",
+                callback_data=TOMORROW,
+            ))
+
         buttons = [
+            days_buttons,
             [
-                InlineKeyboardButton(
-                    text="\U000025C0",
-                    callback_data=PREVIOUS,
-                ),
-                InlineKeyboardButton(
-                    text="\U000025B6",
-                    callback_data=NEXT,
-                ),
-            ],
-                        [
                 InlineKeyboardButton(
                     text="\U0001F4CD Save favourite location",
                     callback_data=SAVE_LOCATION,
@@ -280,6 +298,18 @@ class TelegramBot:
         context.user_data["_temp"].delete()
 
         return WEATHER
+    
+    def yesterday(self, update: Update, context: CallbackContext) -> int:
+        context.user_data["delta"] = -1
+        update.message = update.callback_query.message
+        context.user_data["_temp"] = update.callback_query.message
+        return self.weather(update, context)
+    
+    def tomorrow(self, update: Update, context: CallbackContext) -> int:
+        context.user_data["delta"] = 1
+        update.message = update.callback_query.message
+        context.user_data["_temp"] = update.callback_query.message
+        return self.weather(update, context)
     
     def save_fav_location(self, update: Update, context: CallbackContext) -> int:
         
@@ -359,7 +389,11 @@ class TelegramBot:
     
     def back_to_select_input(self, update: Update, context: CallbackContext) -> int:
 
+        # reset delta, today and location
+        context.user_data["delta"] = None
+        context.user_data["today"] = None
         context.user_data["location"] = None
+        
         update.message = update.callback_query.message
 
         return self.select_input(update, context)
