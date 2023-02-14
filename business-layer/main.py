@@ -50,9 +50,6 @@ class MapOverlay(Resource):
     def get(self):
 
         args = request.args
-
-        if not args.get('category'):
-            return abort(400, "Category not specified")
         
         coordinates = {
             "lat": args.get("lat"),
@@ -142,9 +139,6 @@ class WeatherInfo(Resource):
     def get(self):
 
         args = request.args
-
-        if not args.get('category'):
-            return abort(400, "Category not specified")
         
         coordinates = {
             "lat": args.get("lat"),
