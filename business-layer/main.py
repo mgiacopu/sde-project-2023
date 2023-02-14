@@ -6,6 +6,8 @@ from PIL import Image
 from io import BytesIO
 
 DATA_LAYER_URL = 'http://data-layers/api'
+LAYER_ADAPTER_URL = f'{DATA_LAYER_URL}/adapters/v1'
+LAYER_DATABASE_URL = f'{DATA_LAYER_URL}/db/v1'
 
 def serve_pil_image(pil_img):
     img_io = BytesIO()
@@ -18,7 +20,7 @@ def get_coordinates(location):
         'address': location
     }
 
-    res = r.get(f"{DATA_LAYER_URL}/adapters/v1/geocoding/search", params=parameters)
+    res = r.get(f"{LAYER_ADAPTER_URL}/geocoding/search", params=parameters)
 
     # If the geocoding service returns an error, return the error
     if res.status_code != 200:
@@ -49,13 +51,20 @@ class MapOverlay(Resource):
 
         args = request.args
 
+        if not args.get('category'):
+            return abort(400, "Category not specified")
+        
         coordinates = {
             "lat": args.get("lat"),
             "lon": args.get("lon"),
         }
 
-        if args.get('location'):
-            coordinates = get_coordinates(args.get('location'))
+        if not args.get('lat') or not args.get('lon'):
+            if not args.get('location'):
+                return abort(400, "Coordinates or location not specified")
+            else:
+                coordinates = get_coordinates(args.get('location'))
+        
 
         parameters = {
             'lat': coordinates["lat"],
@@ -83,15 +92,15 @@ class MapOverlay(Resource):
         for i in range(2):
             for j in range(2):
 
-                parameters = {
+                parameters_tiles = {
                     'x': x_tile + i + x_tile_offset,
                     'y': y_tile + j + y_tile_offset,
                     'zoom': self.zoom
                 }
 
-                res = r.get(f"{DATA_LAYER_URL}/adapters/v1/map", params=parameters)
+                res = r.get(f"{LAYER_ADAPTER_URL}/map", params=parameters_tiles)
                 map_image = Image.open(BytesIO(res.content))
-                res = r.get(f"{DATA_LAYER_URL}/adapters/v1/map/precipitations", params=parameters)
+                res = r.get(f"{LAYER_ADAPTER_URL}/map/precipitations", params=parameters_tiles)
                 precipitation_overlay = Image.open(BytesIO(res.content))
 
                 # paste precipitation overlay on map
@@ -100,7 +109,7 @@ class MapOverlay(Resource):
                 base_canvas.paste(map_image, (i * self.map_size, j * self.map_size))
 
         # get weather icon
-        res = r.get(f"{DATA_LAYER_URL}/adapters/v1/weather/current", params=parameters)
+        res = r.get(f"{LAYER_ADAPTER_URL}/weather/current", params=parameters)
         icon_url = "https://" + res.json()['current']['condition']['icon'][2:]
         weather_icon = Image.open(BytesIO(r.get(icon_url).content))
         weather_icon = weather_icon.resize((self.icon_size, self.icon_size))
@@ -116,7 +125,7 @@ class MapOverlay(Resource):
         base_canvas.paste(weather_icon, offset, weather_icon)
 
         return serve_pil_image(base_canvas)
- 
+
 class WeatherInfo(Resource):
 
     def __init__(self) -> None:
@@ -134,13 +143,20 @@ class WeatherInfo(Resource):
 
         args = request.args
 
+        if not args.get('category'):
+            return abort(400, "Category not specified")
+        
         coordinates = {
             "lat": args.get("lat"),
             "lon": args.get("lon"),
         }
 
-        if args.get('location'):
-            coordinates = get_coordinates(args.get('location'))
+        if not args.get('lat') or not args.get('lon'):
+            if not args.get('location'):
+                return abort(400, "Coordinates or location not specified")
+            else:
+                coordinates = get_coordinates(args.get('location'))
+        
 
         parameters = {
             'lat': coordinates["lat"],
@@ -149,13 +165,13 @@ class WeatherInfo(Resource):
 
         weather_info = {}
 
-        res = r.get(f"{DATA_LAYER_URL}/adapters/v1/weather/current", params=parameters)
+        res = r.get(f"{LAYER_ADAPTER_URL}/weather/current", params=parameters)
         weather_info["temperature"] = f"{res.json()['current']['temp_c']}°C"
         weather_info["humidity"] = f"{res.json()['current']['humidity']}%"
         weather_info["precipitation"] = f"{res.json()['current']['precip_mm']}mm"
         weather_info["weather_condition"] = f"{res.json()['current']['condition']['text']}"
         
-        res = r.get(f"{DATA_LAYER_URL}/air_pollution", params=parameters)
+        res = r.get(f"{LAYER_ADAPTER_URL}/air_pollution", params=parameters)
 
         weather_info["air_quality"] = self.air_quality[res.json()['main']['aqi']]
 
@@ -178,13 +194,20 @@ class RecommendedPlaces(Resource):
 
         args = request.args
 
+        if not args.get('category'):
+            return abort(400, "Category not specified")
+        
         coordinates = {
             "lat": args.get("lat"),
             "lon": args.get("lon"),
         }
 
-        if args.get('location'):
-            coordinates = get_coordinates(args.get('location'))
+        if not args.get('lat') or not args.get('lon'):
+            if not args.get('location'):
+                return abort(400, "Coordinates or location not specified")
+            else:
+                coordinates = get_coordinates(args.get('location'))
+        
 
         parameters = {
             'lat': coordinates["lat"],
@@ -192,7 +215,7 @@ class RecommendedPlaces(Resource):
             'categories': self.categories[args.get('category')],
         }
 
-        res = r.get(f"{DATA_LAYER_URL}/adapters/v1/places", params=parameters)
+        res = r.get(f"{LAYER_ADAPTER_URL}/places", params=parameters)
 
         to_return = [{
             "name": place["properties"].get("name") or place["properties"].get("address_line1"),
@@ -206,11 +229,11 @@ class User(Resource):
     def get(self, user_id):
 
         # Check if user exists
-        res = r.get(f"{DATA_LAYER_URL}/db/v1/user/{user_id}")
+        res = r.get(f"{LAYER_DATABASE_URL}/user/{user_id}")
 
         # If user does not exist, create it
         if res.status_code == 404:
-            res = r.post(f"{DATA_LAYER_URL}/db/v1/user/{user_id}")
+            res = r.post(f"{LAYER_DATABASE_URL}/user/{user_id}")
 
         # Return user info
         return {
@@ -226,16 +249,19 @@ class User(Resource):
                 "lat": args.get("lat"),
                 "lon": args.get("lon"),
             }
-    
-            if args.get('location'):
-                coordinates = get_coordinates(args.get('location'))
-    
+
+            if not args.get('lat') or not args.get('lon'):
+                if not args.get('location'):
+                    return abort(400, "Coordinates or location not specified")
+                else:
+                    coordinates = get_coordinates(args.get('location'))
+        
             parameters = {
                 'lat': coordinates["lat"],
                 'lon': coordinates["lon"],
             }
     
-            res = r.patch(f"{DATA_LAYER_URL}/db/v1/user/{user_id}", data=parameters)
+            res = r.patch(f"{LAYER_DATABASE_URL}/user/{user_id}", data=parameters)
     
             return {
                 "lon": res.json()["lon"],
