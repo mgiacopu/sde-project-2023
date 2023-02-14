@@ -83,15 +83,15 @@ class MapOverlay(Resource):
         for i in range(2):
             for j in range(2):
 
-                parameters = {
+                parameters_x_y = {
                     'x': x_tile + i + x_tile_offset,
                     'y': y_tile + j + y_tile_offset,
                     'zoom': self.zoom
                 }
 
-                res = r.get(f"{DATA_LAYER_URL}/adapters/v1/map", params=parameters)
+                res = r.get(f"{DATA_LAYER_URL}/adapters/v1/map", params=parameters_x_y)
                 map_image = Image.open(BytesIO(res.content))
-                res = r.get(f"{DATA_LAYER_URL}/adapters/v1/map/precipitations", params=parameters)
+                res = r.get(f"{DATA_LAYER_URL}/adapters/v1/map/precipitations", params=parameters_x_y)
                 precipitation_overlay = Image.open(BytesIO(res.content))
 
                 # paste precipitation overlay on map
@@ -155,7 +155,7 @@ class WeatherInfo(Resource):
         weather_info["precipitation"] = f"{res.json()['current']['precip_mm']}mm"
         weather_info["weather_condition"] = f"{res.json()['current']['condition']['text']}"
         
-        res = r.get(f"{DATA_LAYER_URL}/air_pollution", params=parameters)
+        res = r.get(f"{DATA_LAYER_URL}/adapters/v1/air_pollution", params=parameters)
 
         weather_info["air_quality"] = self.air_quality[res.json()['main']['aqi']]
 

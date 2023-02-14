@@ -25,4 +25,4 @@ services:
     volumes:
       - ./data-layers/adapters:/app/adapters
       - ./data-layers/db:/app/db
-    command: run dev
+    command: run start
