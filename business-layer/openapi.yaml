@@ -1,0 +1,299 @@
+openapi: 3.0.3
+info:
+  title: Business Layer API
+  description: |-
+    The Business Layer API is a RESTful API that provides a connetion between
+    the Data Layers and the Provcess Centric Layer.
+
+    
+    Some useful links:
+    - [Project's repository](https://github.com/mgiacopu/sde-project-2023)
+    - [Data Layers APIs](http://localhost:8083/api/docs)
+  version: 1.0.0
+servers:
+  - url: https://business-layer/api/v1
+    description: Internal URL
+  - url: https://localhost:8083/api/v1
+    description: Development URL
+paths:
+  /map:
+    get:
+      summary: Map image, precipitation overlay and weather icon
+      parameters:
+        - name: location
+          description: Location to search for. If not provided, the coordinates
+            `lat`, `lon`, must be provided
+          example: "Rome"
+          in: query
+          schema:
+            type: string
+        - name: lat
+          description: The latitude to search for. Must be used with `lon`.
+            If not provided, the location must be provided.
+          example: 41.902782
+          in: query
+          schema:
+            type: number
+        - name: lon
+          description: The longitude to search for. Must be used with `lat`.
+            If not provided, the location must be provided.
+          example: 12.496366
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Returns the image of the map with the pecipitation
+            overlay and with an icon representing the location weather
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+        '400': 
+          description: Not enough parameters provided.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/LocationError'
+                  - $ref: '#/components/schemas/CategoryError'
+        '404':
+          description: The location was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataLayerError'
+  /weather:
+    get:
+      summary: Weather information
+      parameters:
+        - name: location
+          description: The location to search for. If not provided, the
+            coordinates `lat`, `lon`, must be provided.
+          in: query
+          schema:
+            type: string
+        - name: lat
+          description: The latitude to search for. Must be used with `lon`.
+            If not provided, the location must be provided.
+          in: query
+          schema:
+            type: number
+        - name: lon
+          description: The longitude to search for
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Returns the weather information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Weather'
+        '400': 
+          description: Not enough parameters provided.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/LocationError'
+                  - $ref: '#/components/schemas/CategoryError'
+        '404':
+          description: The location was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataLayerError'
+  /places:
+    get:
+      summary: Places information
+      parameters:
+        - name: location
+          description: The location to search for. If not provided, the
+            coordinates `lat`, `lon`, must be provided.
+          in: query
+          schema:
+            type: string
+        - name: lat
+          description: The latitude to search for. Must be used with `lon`.
+            If not provided, the location must be provided.
+          in: query
+          schema:
+            type: number
+        - name: lon
+          description: The longitude to search for
+          in: query
+          schema:
+            type: number
+        - name: category
+          description: The category of the places to search for.
+          required: true
+          in: query
+          schema:
+            type: string
+            enum:
+              - restaurants
+              - parks
+              - museums
+              - sights
+      responses:
+        '200':
+          description: Returns the places information
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Places'
+        '400': 
+          description: Not enough parameters provided.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/LocationError'
+                  - $ref: '#/components/schemas/CategoryError'
+        '404':
+          description: The location was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataLayerError'
+  /user/{user_id}:
+    get:
+      summary: User favourite location
+      parameters:
+        - name: user_id
+          description: The user id to search for
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns the user favourite location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: The user was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataLayerError'
+    patch:
+      summary: Update user favourite location
+      parameters:
+        - name: user_id
+          description: The user id to search for.
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: location
+          description: The location of the new favourite location. If not provided,
+            the coordinates `lat`, `lon`, must be provided.
+          in: query
+          schema:
+            type: string
+        - name: lat
+          description: The latitude of the new favourite location. Must be used with `lon`.
+            If not provided, the location must be provided.
+          in: query
+          schema:
+            type: number
+        - name: lon
+          description: The longitude the new favourite location. Must be used with `lat`.
+            If not provided, the location must be provided.
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Returns the updated user favourite location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400': 
+          description: Not enough parameters provided.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/LocationError'
+                  - $ref: '#/components/schemas/CategoryError'
+        '404':
+          description: The user was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataLayerError'
+
+components:
+  schemas:
+    Weather:
+      type: object
+      properties:
+        temperature:
+          type: string
+          example: "20.0°C"
+        humidity:
+          type: string
+          example: "50%"
+        precipitation:
+          type: string
+          example: "3mm"
+        weather_condition:
+          type: string
+          example: "Clear"
+        air_quality:
+          type: string
+          example: "Good"
+    Places:
+      type: array
+      items:
+        $ref: '#/components/schemas/Place'
+    Place:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Colosseum"
+        lon:
+          type: number
+          example: "12.496366"
+        lat:
+          type: number
+          example: "41.902782"
+    User:
+      type: object
+      properties:
+        lat:
+          type: number
+          example: "41.902782"
+        lon:
+          type: number
+          example: "12.496366"
+    LocationError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Coordinates or location not specified."
+    CategoryError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Category not specified."
+    DataLayerError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Error message from the data layer"
