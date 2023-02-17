@@ -105,6 +105,11 @@ class MapOverlay(Resource):
 
         base_canvas = Image.new('RGBA', (self.map_size * 2, self.map_size * 2), (0, 0, 0, 0))
 
+        calculated_day = date.today()
+        if (args.get("today") and args.get("delta")):
+            calculated_day = datetime.strptime(args.get("today"), "%Y-%m-%d").date() + timedelta(int(args.get("delta")))
+        is_today = calculated_day == date.today()
+
         # get the map tiles
         for i in range(2):
             for j in range(2):
@@ -118,8 +123,7 @@ class MapOverlay(Resource):
                 res = r.get(f"{LAYER_ADAPTER_URL}/map", params=parameters_tiles)
                 map_image = Image.open(BytesIO(res.content))
                 
-                if ((not args.get("today") and not args.get("delta")) 
-                    or (date.today() == datetime.strptime(args.get("today"), "%Y-%m-%d").date() + timedelta(int(args.get("delta"))))):
+                if is_today:
                     res = r.get(f"{LAYER_ADAPTER_URL}/map/precipitations", params=parameters_tiles)
                     precipitation_overlay = Image.open(BytesIO(res.content))
 
@@ -129,11 +133,11 @@ class MapOverlay(Resource):
                 base_canvas.paste(map_image, (i * self.map_size, j * self.map_size))
 
         # get weather icon
-        if not args.get('today'):
+        if is_today:
             res = r.get(f"{LAYER_ADAPTER_URL}/weather/current", params=parameters)
             icon_url = "https://" + res.json()['current']['condition']['icon'][2:]
         else:
-            parameters["day"] = args.get('today')
+            parameters["day"] = calculated_day.strftime("%Y-%m-%d")
             res = r.get(f"{LAYER_ADAPTER_URL}/weather/forecast", params=parameters)
             icon_url = "https://" + res.json()[parameters["day"]]['condition']['icon'][2:]
 
